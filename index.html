@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angler's Field Codex - Interactive Database</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#131e32',
+                            900: '#0f172a',
+                            950: '#080d1a',
+                        },
+                        emerald: {
+                            400: '#34d399',
+                            500: '#10b981',
+                            900: '#064e3b',
+                        },
+                        cyan: {
+                            400: '#22d3ee',
+                            500: '#06b6d4',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #080d1a;
+            color: #f1f5f9;
+        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .glow-emerald { box-shadow: 0 0 15px -3px rgba(16, 185, 129, 0.3); }
+        .glow-cyan { box-shadow: 0 0 15px -3px rgba(6, 182, 212, 0.3); }
+        
+        .modal-backdrop {
+            transition: opacity 0.25s ease-in-out;
+        }
+        .modal-content {
+            transition: transform 0.25s ease-in-out, opacity 0.25s ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-950 text-slate-100 antialiased selection:bg-emerald-500 selection:text-white">
+
+    <!-- Header / Navbar -->
+    <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="resetSearch()">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-slate-950 font-bold text-xl shadow-md glow-emerald">
+                    <i class="fa-solid font-black fa-fish text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg sm:text-xl tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
+                        Angler's Field Codex
+                    </h1>
+                    <p class="text-xs text-slate-400 hidden sm:block">Complete Fishing & Catch Database</p>
+                </div>
+            </div>
+
+            <!-- Global Quick Stats Header -->
+            <div class="hidden md:flex items-center space-x-6 text-xs">
+                <div class="flex items-center space-x-2 bg-slate-800/60 px-3 py-1.5 rounded-lg border border-slate-700/50">
+                    <i class="fa-solid fa-fish text-emerald-400"></i>
+                    <span class="text-slate-400">Species:</span>
+                    <span class="font-bold text-slate-200">27</span>
+                </div>
+                <div class="flex items-center space-x-2 bg-slate-800/60 px-3 py-1.5 rounded-lg border border-slate-700/50">
+                    <i class="fa-solid fa-worm text-amber-400"></i>
+                    <span class="text-slate-400">Baits:</span>
+                    <span class="font-bold text-slate-200">13</span>
+                </div>
+                <div class="flex items-center space-x-2 bg-slate-800/60 px-3 py-1.5 rounded-lg border border-slate-700/50">
+                    <i class="fa-solid fa-compass text-cyan-400"></i>
+                    <span class="text-slate-400">Locations:</span>
+                    <span class="font-bold text-slate-200">8</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
+
+        <!-- Mode Selector / Search Navigation Tabs -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-md flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 w-full md:w-auto">
+                <button id="tab-fish" onclick="switchMode('fish')" 
+                    class="flex-1 md:flex-initial px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center space-x-2 text-emerald-400 bg-slate-800 shadow">
+                    <i class="fa-solid fa-fish"></i>
+                    <span>By Fish</span>
+                </button>
+                <button id="tab-location" onclick="switchMode('location')" 
+                    class="flex-1 md:flex-initial px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center space-x-2 text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    <span>By Location</span>
+                </button>
+                <button id="tab-bait" onclick="switchMode('bait')" 
+                    class="flex-1 md:flex-initial px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center space-x-2 text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-worm"></i>
+                    <span>By Bait</span>
+                </button>
+            </div>
+
+            <!-- Dynamic Dropdown & Filter Controls -->
+            <div class="flex flex-col sm:flex-row w-full md:w-auto gap-3 items-center">
+                <div class="relative w-full sm:w-64">
+                    <select id="primary-select" onchange="handleSelectChange(this.value)" 
+                        class="w-full bg-slate-950 text-slate-200 text-sm font-medium border border-slate-700/70 rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 appearance-none cursor-pointer">
+                    </select>
+                    <div class="absolute right-3.5 top-3 pointer-events-none text-slate-400">
+                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                    </div>
+                </div>
+
+                <div class="relative w-full sm:w-56">
+                    <input type="text" id="search-input" oninput="renderContent()" placeholder="Filter results..." 
+                        class="w-full bg-slate-950 text-slate-200 text-sm border border-slate-700/70 rounded-xl pl-9 pr-4 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-500">
+                    <div class="absolute left-3 top-3 text-slate-500 text-xs">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+                </div>
+
+                <button onclick="resetSearch()" title="Reset Filters" 
+                    class="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-slate-700 transition duration-200 text-sm">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Active Context Banner -->
+        <div id="active-summary-banner" class="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="flex items-center space-x-4">
+                <div id="banner-icon" class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-2xl">
+                    <i class="fa-solid fa-fish"></i>
+                </div>
+                <div>
+                    <span id="banner-tag" class="text-xs uppercase tracking-wider text-emerald-400 font-bold">Selected Target</span>
+                    <h2 id="banner-title" class="text-xl font-bold text-white">All Species</h2>
+                    <p id="banner-subtitle" class="text-xs text-slate-400 mt-0.5">Click any card to open full expanded details</p>
+                </div>
+            </div>
+            <div id="banner-stats" class="flex flex-wrap gap-2 text-xs"></div>
+        </div>
+
+        <!-- Content Display Grid -->
+        <div id="results-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden text-center py-16 bg-slate-900/50 border border-slate-800/80 rounded-2xl">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 text-2xl">
+                <i class="fa-solid fa-water-lower"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-300">No Matching Results</h3>
+            <p class="text-sm text-slate-500 mt-1 max-w-sm mx-auto">Try adjusting your filter or selection to find species, baits, or fishing locations.</p>
+            <button onclick="resetSearch()" class="mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-xl text-xs transition duration-200">
+                Reset Filters
+            </button>
+        </div>
+
+    </main>
+
+    <!-- EXPANDED DETAIL MODAL / DRAWER -->
+    <div id="detail-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 opacity-0 pointer-events-none modal-backdrop bg-slate-950/80 backdrop-blur-md">
+        <div id="modal-container" class="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl modal-content transform scale-95 overflow-hidden">
+            <!-- Modal Header -->
+            <div id="modal-header" class="p-6 border-b border-slate-800 flex items-start justify-between bg-slate-900/90">
+                <div class="flex items-center space-x-4">
+                    <div id="modal-icon-badge" class="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
+                        <i class="fa-solid fa-fish"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span id="modal-category-tag" class="text-xs uppercase font-extrabold tracking-wider px-2.5 py-0.5 rounded-full border">
+                                Category
+                            </span>
+                            <span id="modal-extra-badge" class="text-xs font-semibold text-slate-400"></span>
+                        </div>
+                        <h2 id="modal-title" class="text-2xl font-black text-white mt-1">Item Title</h2>
+                    </div>
+                </div>
+                <button onclick="closeModal()" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition border border-slate-700">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body (Scrollable Data View) -->
+            <div id="modal-body" class="p-6 overflow-y-auto space-y-6 flex-grow">
+                <!-- Content injected dynamically -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 bg-slate-950 border-t border-slate-800/80 flex justify-between items-center text-xs text-slate-400">
+                <span><i class="fa-solid fa-circle-info mr-1.5 text-emerald-400"></i> Click connected tags to navigate directly</span>
+                <button onclick="closeModal()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl border border-slate-700 transition">
+                    Close Details
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800/80 py-6 mt-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-anchor text-slate-400"></i>
+                <span>Offline Angler Guide &bull; 27 Fish &bull; 13 Baits &bull; 8 Locations</span>
+            </div>
+            <p>Self-contained standalone database application.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Data & Logic -->
+    <script>
+        const GAME_DATA = {
+            "locations": {
+                "Layali Grove": [
+                    "Grove Bay",
+                    "Grove Cavern",
+                    "Grove Waterway",
+                    "Grove Canal",
+                    "Storage Center Dock"
+                ],
+                "Zero Dam": [
+                    "Dam River Bank"
+                ],
+                "AZ3": [
+                    "Nuclear Plant Offshore Waters",
+                    "Nuclear Plant Waterway"
+                ]
+            },
+            "baits": {
+                "General Bait": {
+                    "fullName": "General Bait",
+                    "category": "Float Bait",
+                    "cost": null,
+                    "quality": "green"
+                },
+                "Enhanced Dough": {
+                    "fullName": "Enhanced Attractant Dough Bait",
+                    "category": "Float Bait",
+                    "cost": 10,
+                    "quality": "blue"
+                },
+                "Refined Dough": {
+                    "fullName": "Refined Competition Dough Bait",
+                    "category": "Float Bait",
+                    "cost": 15,
+                    "quality": "violet"
+                },
+                "Red Worm": {
+                    "fullName": "Red Worm Secret Bait",
+                    "category": "Float Bait",
+                    "cost": 50,
+                    "quality": "red"
+                },
+                "High-Contrast": {
+                    "fullName": "High-Contrast Spinner",
+                    "category": "Lure Bait",
+                    "cost": 13,
+                    "quality": "green"
+                },
+                "Vibrating": {
+                    "fullName": "Fluorescent Vibrating Spinner",
+                    "category": "Lure Bait",
+                    "cost": 13,
+                    "quality": "green"
+                },
+                "Predator": {
+                    "fullName": "Precision Predator Lure",
+                    "category": "Lure Bait",
+                    "cost": 16,
+                    "quality": "blue"
+                },
+                "Deep Water": {
+                    "fullName": "Deep Water Probe Lure",
+                    "category": "Lure Bait",
+                    "cost": 17,
+                    "quality": "blue"
+                },
+                "Tail-Wag": {
+                    "fullName": "High-Frequency Tail-Wag Soft Lure",
+                    "category": "Lure Bait",
+                    "cost": 19,
+                    "quality": "violet"
+                },
+                "Aggression": {
+                    "fullName": "Territorial Aggression Lure",
+                    "category": "Lure Bait",
+                    "cost": 19,
+                    "quality": "violet"
+                },
+                "Deep Dive": {
+                    "fullName": "Deep Dive Giant Vibration Lure",
+                    "category": "Lure Bait",
+                    "cost": 20,
+                    "quality": "yellow"
+                },
+                "Steel Ball": {
+                    "fullName": "Steel Ball Rattle Lure",
+                    "category": "Lure Bait",
+                    "cost": 19,
+                    "quality": "yellow"
+                },
+                "Gilded": {
+                    "fullName": "Gilded Competition-Grade Lure",
+                    "category": "Lure Bait",
+                    "cost": 21,
+                    "quality": "red"
+                }
+            },
+            "fish": [
+                { id: 1, name: "Tilapia", locations: ["Grove Bay", "Grove Cavern", "Grove Waterway", "Grove Canal", "Storage Center Dock", "Dam River Bank", "Nuclear Plant Offshore Waters", "Nuclear Plant Waterway"], baits: ["High-Contrast"] },
+                { id: 2, name: "Pale Chub", locations: ["Grove Bay", "Grove Cavern", "Grove Waterway", "Grove Canal", "Storage Center Dock", "Dam River Bank", "Nuclear Plant Waterway"], baits: ["General Bait"] },
+                { id: 3, name: "Striped Barb", locations: ["Grove Bay", "Grove Cavern", "Grove Waterway", "Grove Canal", "Storage Center Dock", "Dam River Bank", "Nuclear Plant Waterway"], baits: ["General Bait"] },
+                { id: 4, name: "Redtail Fish", locations: ["Grove Bay", "Grove Cavern", "Grove Waterway", "Grove Canal", "Storage Center Dock", "Dam River Bank", "Nuclear Plant Waterway"], baits: ["Enhanced Dough", "High-Contrast"] },
+                { id: 5, name: "Bighead Carp", locations: ["Grove Bay", "Dam River Bank", "Nuclear Plant Waterway"], baits: ["Enhanced Dough"] },
+                { id: 6, name: "Black Carp", locations: ["Grove Bay", "Dam River Bank", "Nuclear Plant Waterway"], baits: ["High-Contrast", "Vibrating"] },
+                { id: 7, name: "Striped Bass", locations: ["Grove Bay", "Grove Cavern", "Grove Waterway", "Grove Canal", "Storage Center Dock", "Dam River Bank", "Nuclear Plant Offshore Waters", "Nuclear Plant Waterway"], baits: ["General Bait", "High-Contrast"] },
+                { id: 8, name: "Mullet", locations: ["Grove Bay", "Grove Cavern", "Grove Waterway", "Grove Canal", "Storage Center Dock", "Dam River Bank", "Nuclear Plant Offshore Waters", "Nuclear Plant Waterway"], baits: ["General Bait", "High-Contrast", "Vibrating", "Predator"] },
+                { id: 9, name: "Zander", locations: ["Grove Bay", "Grove Cavern", "Grove Waterway", "Grove Canal", "Dam River Bank", "Nuclear Plant Waterway"], baits: ["High-Contrast", "Vibrating", "Predator"] },
+                { id: 10, name: "Ruby Fish", locations: ["Storage Center Dock"], baits: ["Refined Dough"] },
+                { id: 11, name: "Shortnose Bichir", locations: ["Grove Cavern", "Grove Waterway", "Grove Canal", "Storage Center Dock", "Dam River Bank", "Nuclear Plant Waterway"], baits: ["Enhanced Dough", "High-Contrast", "Vibrating", "Deep Water", "Tail-Wag"] },
+                { id: 12, name: "Longnose Elephantfish", locations: ["Grove Cavern", "Storage Center Dock"], baits: ["Refined Dough"] },
+                { id: 13, name: "Topmouth Culter", locations: ["Grove Bay", "Dam River Bank"], baits: ["High-Contrast", "Predator", "Tail-Wag"] },
+                { id: 14, name: "Giraffe Catfish", locations: ["Grove Waterway", "Grove Cavern", "Grove Canal", "Dam River Bank", "Nuclear Plant Waterway"], baits: ["Deep Water"] },
+                { id: 15, name: "Ansorge's Bichir", locations: ["Grove Bay", "Grove Cavern", "Storage Center Dock", "Dam River Bank", "Nuclear Plant Waterway"], baits: ["Refined Dough", "Deep Water", "Aggression"] },
+                { id: 16, name: "Mirror Carp", locations: ["Grove Cavern", "Nuclear Plant Waterway"], baits: ["Tail-Wag"] },
+                { id: 17, name: "Pike", locations: ["Grove Bay", "Dam River Bank"], baits: ["Predator", "Tail-Wag", "Aggression", "Steel Ball"] },
+                { id: 18, name: "African Butterflyfish", locations: ["Storage Center Dock"], baits: ["Red Worm"] },
+                { id: 19, name: "North African Catfish", locations: ["Grove Canal", "Grove Waterway"], baits: ["Vibrating", "Deep Water"] },
+                { id: 20, name: "Radiation Grouper", locations: ["Nuclear Plant Offshore Waters"], baits: ["Vibrating", "Deep Dive"] },
+                { id: 21, name: "Sapphire Snakehead", locations: ["Storage Center Dock"], baits: ["Red Worm"] },
+                { id: 22, name: "Platinum Arowana", locations: ["Grove Cavern"], baits: ["Gilded"] },
+                { id: 23, name: "Giant Brown Trout", locations: ["Grove Waterway", "Dam River Bank", "Nuclear Plant Waterway"], baits: ["Predator", "Deep Dive"] },
+                { id: 24, name: "Baby Shark", locations: ["Grove Waterway", "Grove Canal", "Dam River Bank", "Nuclear Plant Offshore Waters", "Nuclear Plant Waterway"], baits: ["Deep Dive", "Steel Ball"] },
+                { id: 25, name: "Atlantic Salmon", locations: ["Grove Canal", "Nuclear Plant Offshore Waters"], baits: ["Gilded", "Tail-Wag"] },
+                { id: 26, name: "Tigerfish", locations: ["Grove Bay"], baits: ["Aggression", "Steel Ball"] },
+                { id: 27, name: "Indo-Pacific Tarpon", locations: ["Grove Canal", "Nuclear Plant Offshore Waters"], baits: [] }
+            ]
+        };
+
+        let currentMode = 'fish';
+        let selectedValue = 'ALL';
+
+        function getRegionForLocation(locName) {
+            for (const [region, locs] of Object.entries(GAME_DATA.locations)) {
+                if (locs.includes(locName)) return region;
+            }
+            return "Unknown Region";
+        }
+
+        function getBaitInfo(baitKey) {
+            return GAME_DATA.baits[baitKey] || { fullName: baitKey, category: "Float Bait", cost: null, quality: "green" };
+        }
+
+        function getQualityStyle(quality) {
+            switch(quality) {
+                case 'green': return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20';
+                case 'blue': return 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30 hover:bg-cyan-500/20';
+                case 'violet': return 'text-purple-400 bg-purple-500/10 border-purple-500/30 hover:bg-purple-500/20';
+                case 'yellow': return 'text-amber-400 bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20';
+                case 'red': return 'text-rose-400 bg-rose-500/10 border-rose-500/30 hover:bg-rose-500/20';
+                default: return 'text-slate-300 bg-slate-800 border-slate-700 hover:bg-slate-700';
+            }
+        }
+
+        function switchMode(mode, targetValue = 'ALL') {
+            currentMode = mode;
+            selectedValue = targetValue;
+
+            ['fish', 'location', 'bait'].forEach(m => {
+                const btn = document.getElementById(`tab-${m}`);
+                if (m === mode) {
+                    btn.className = "flex-1 md:flex-initial px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center space-x-2 text-emerald-400 bg-slate-800 shadow glow-emerald";
+                } else {
+                    btn.className = "flex-1 md:flex-initial px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-900";
+                }
+            });
+
+            populateDropdown();
+            renderContent();
+        }
+
+        function populateDropdown() {
+            const select = document.getElementById('primary-select');
+            select.innerHTML = '';
+
+            const allOpt = document.createElement('option');
+            allOpt.value = 'ALL';
+            
+            if (currentMode === 'fish') {
+                allOpt.textContent = '-- All Fish Species (27) --';
+                select.appendChild(allOpt);
+                GAME_DATA.fish.forEach(f => {
+                    const opt = document.createElement('option');
+                    opt.value = f.id;
+                    opt.textContent = `#${f.id} - ${f.name}`;
+                    select.appendChild(opt);
+                });
+            } else if (currentMode === 'location') {
+                allOpt.textContent = '-- All Locations (8) --';
+                select.appendChild(allOpt);
+                Object.entries(GAME_DATA.locations).forEach(([region, locs]) => {
+                    const group = document.createElement('optgroup');
+                    group.label = region;
+                    locs.forEach(loc => {
+                        const opt = document.createElement('option');
+                        opt.value = loc;
+                        opt.textContent = loc;
+                        group.appendChild(opt);
+                    });
+                    select.appendChild(group);
+                });
+            } else if (currentMode === 'bait') {
+                allOpt.textContent = '-- All Baits (13) --';
+                select.appendChild(allOpt);
+
+                const floatBaits = Object.keys(GAME_DATA.baits).filter(b => GAME_DATA.baits[b].category === "Float Bait");
+                const lureBaits = Object.keys(GAME_DATA.baits).filter(b => GAME_DATA.baits[b].category === "Lure Bait");
+
+                const floatGroup = document.createElement('optgroup');
+                floatGroup.label = "Float Baits";
+                floatBaits.forEach(b => {
+                    const opt = document.createElement('option');
+                    opt.value = b;
+                    opt.textContent = GAME_DATA.baits[b].fullName;
+                    floatGroup.appendChild(opt);
+                });
+                select.appendChild(floatGroup);
+
+                const lureGroup = document.createElement('optgroup');
+                lureGroup.label = "Lure Baits";
+                lureBaits.forEach(b => {
+                    const opt = document.createElement('option');
+                    opt.value = b;
+                    opt.textContent = GAME_DATA.baits[b].fullName;
+                    lureGroup.appendChild(opt);
+                });
+                select.appendChild(lureGroup);
+            }
+
+            select.value = selectedValue;
+        }
+
+        function handleSelectChange(val) {
+            selectedValue = val;
+            renderContent();
+        }
+
+        function resetSearch() {
+            document.getElementById('search-input').value = '';
+            switchMode('fish', 'ALL');
+        }
+
+        function navigateToLocation(locName, e) {
+            if (e) e.stopPropagation();
+            switchMode('location', locName);
+            openModal('location', locName);
+        }
+
+        function navigateToBait(baitKey, e) {
+            if (e) e.stopPropagation();
+            switchMode('bait', baitKey);
+            openModal('bait', baitKey);
+        }
+
+        function navigateToFish(fishId, e) {
+            if (e) e.stopPropagation();
+            switchMode('fish', String(fishId));
+            openModal('fish', fishId);
+        }
+
+        function renderContent() {
+            const grid = document.getElementById('results-grid');
+            const emptyState = document.getElementById('empty-state');
+            const searchFilter = document.getElementById('search-input').value.toLowerCase().trim();
+
+            grid.innerHTML = '';
+            updateBanner();
+
+            if (currentMode === 'fish') {
+                renderFishCards(grid, searchFilter);
+            } else if (currentMode === 'location') {
+                renderLocationCards(grid, searchFilter);
+            } else if (currentMode === 'bait') {
+                renderBaitCards(grid, searchFilter);
+            }
+
+            if (grid.children.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+            }
+        }
+
+        function renderFishCards(container, filter) {
+            let items = GAME_DATA.fish;
+
+            if (selectedValue !== 'ALL') {
+                items = items.filter(f => String(f.id) === String(selectedValue));
+            }
+
+            if (filter) {
+                items = items.filter(f => {
+                    const matchesName = f.name.toLowerCase().includes(filter);
+                    const matchesBait = f.baits.some(b => b.toLowerCase().includes(filter) || getBaitInfo(b).fullName.toLowerCase().includes(filter));
+                    const matchesLoc = f.locations.some(l => l.toLowerCase().includes(filter));
+                    return matchesName || matchesBait || matchesLoc;
+                });
+            }
+
+            items.forEach(fish => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-2xl p-5 transition duration-200 flex flex-col justify-between shadow-lg cursor-pointer group hover:shadow-emerald-950/20";
+                card.onclick = () => openModal('fish', fish.id);
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-start justify-between mb-3 border-b border-slate-800/80 pb-3">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-xs font-extrabold px-2.5 py-1 bg-slate-800 text-emerald-400 rounded-lg border border-slate-700">
+                                    #${fish.id.toString().padStart(2, '0')}
+                                </span>
+                                <h3 class="font-bold text-lg text-slate-100 group-hover:text-emerald-400 transition-colors">
+                                    ${fish.name}
+                                </h3>
+                            </div>
+                            <span class="text-xs px-2 py-1 rounded-md text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-1 font-medium">
+                                <i class="fa-solid fa-up-right-and-down-left-from-center text-[10px]"></i> Details
+                            </span>
+                        </div>
+
+                        <div class="mb-4">
+                            <h4 class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-2 flex items-center gap-1.5">
+                                <i class="fa-solid fa-worm text-amber-400"></i> Recommended Baits
+                            </h4>
+                            ${fish.baits.length === 0 ? `
+                                <p class="text-xs italic text-slate-500">No specific bait required</p>
+                            ` : `
+                                <div class="flex flex-wrap gap-1.5">
+                                    ${fish.baits.map(b => {
+                                        const info = getBaitInfo(b);
+                                        const qStyle = getQualityStyle(info.quality);
+                                        return `
+                                            <span onclick="navigateToBait('${b}', event)" class="text-xs ${qStyle} border px-2.5 py-1 rounded-lg transition flex items-center space-x-1 shadow-sm cursor-pointer">
+                                                <i class="fa-solid ${info.category === 'Float Bait' ? 'fa-cookie-bite' : 'fa-feather'} text-[10px]"></i>
+                                                <span class="font-medium">${info.fullName}</span>
+                                            </span>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            `}
+                        </div>
+
+                        <div>
+                            <h4 class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-2 flex items-center gap-1.5">
+                                <i class="fa-solid fa-location-dot text-emerald-400"></i> Key Locations
+                            </h4>
+                            <div class="flex flex-wrap gap-1.5">
+                                ${fish.locations.slice(0, 3).map(loc => `
+                                    <span onclick="navigateToLocation('${loc}', event)" class="text-xs bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-emerald-300 border border-slate-800 hover:border-emerald-500/40 px-2.5 py-1 rounded-lg transition text-left cursor-pointer">
+                                        ${loc}
+                                    </span>
+                                `).join('')}
+                                ${fish.locations.length > 3 ? `
+                                    <span class="text-xs bg-slate-950 text-slate-500 border border-slate-800 px-2 py-1 rounded-lg">
+                                        +${fish.locations.length - 3} more
+                                    </span>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderLocationCards(container, filter) {
+            let allLocsFlattened = [];
+            Object.values(GAME_DATA.locations).forEach(arr => allLocsFlattened.push(...arr));
+
+            let locationsToRender = allLocsFlattened;
+
+            if (selectedValue !== 'ALL') {
+                locationsToRender = [selectedValue];
+            }
+
+            if (filter) {
+                locationsToRender = locationsToRender.filter(loc => 
+                    loc.toLowerCase().includes(filter) ||
+                    getRegionForLocation(loc).toLowerCase().includes(filter) ||
+                    GAME_DATA.fish.some(f => f.locations.includes(loc) && f.name.toLowerCase().includes(filter))
+                );
+            }
+
+            locationsToRender.forEach(loc => {
+                const region = getRegionForLocation(loc);
+                const catchableFish = GAME_DATA.fish.filter(f => f.locations.includes(loc));
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-900 border border-slate-800 hover:border-cyan-500/50 rounded-2xl p-5 transition duration-200 flex flex-col justify-between shadow-lg cursor-pointer group hover:shadow-cyan-950/20";
+                card.onclick = () => openModal('location', loc);
+
+                card.innerHTML = `
+                    <div>
+                        <div class="mb-4 pb-3 border-b border-slate-800/80 flex items-start justify-between">
+                            <div>
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-cyan-400">
+                                    <i class="fa-solid fa-map-pin mr-1"></i>${region}
+                                </span>
+                                <h3 class="font-bold text-lg text-slate-100 group-hover:text-cyan-400 transition-colors mt-0.5">${loc}</h3>
+                            </div>
+                            <span class="text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-semibold px-2.5 py-1 rounded-xl flex items-center gap-1">
+                                <i class="fa-solid fa-up-right-and-down-left-from-center text-[10px]"></i> ${catchableFish.length} Species
+                            </span>
+                        </div>
+
+                        <h4 class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-2.5 flex items-center justify-between">
+                            <span>Catchable Fish Preview</span>
+                        </h4>
+
+                        <div class="flex flex-wrap gap-1.5 max-h-36 overflow-hidden">
+                            ${catchableFish.map(f => `
+                                <span onclick="navigateToFish(${f.id}, event)" class="text-xs bg-slate-950/80 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-emerald-500/40 px-2.5 py-1 rounded-lg transition flex items-center space-x-1 cursor-pointer">
+                                    <span class="text-[10px] text-emerald-400">#${f.id}</span>
+                                    <span>${f.name}</span>
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderBaitCards(container, filter) {
+            const allBaitKeys = Object.keys(GAME_DATA.baits);
+            let baitsToRender = allBaitKeys;
+
+            if (selectedValue !== 'ALL') {
+                baitsToRender = [selectedValue];
+            }
+
+            if (filter) {
+                baitsToRender = baitsToRender.filter(baitKey => {
+                    const info = getBaitInfo(baitKey);
+                    return baitKey.toLowerCase().includes(filter) ||
+                           info.fullName.toLowerCase().includes(filter) ||
+                           info.category.toLowerCase().includes(filter) ||
+                           GAME_DATA.fish.some(f => f.baits.includes(baitKey) && f.name.toLowerCase().includes(filter));
+                });
+            }
+
+            baitsToRender.forEach(baitKey => {
+                const info = getBaitInfo(baitKey);
+                const targetFish = GAME_DATA.fish.filter(f => f.baits.includes(baitKey));
+                const qStyle = getQualityStyle(info.quality);
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-900 border border-slate-800 hover:border-amber-500/50 rounded-2xl p-5 transition duration-200 flex flex-col justify-between shadow-lg cursor-pointer group hover:shadow-amber-950/20";
+                card.onclick = () => openModal('bait', baitKey);
+
+                const isFloat = info.category === "Float Bait";
+
+                card.innerHTML = `
+                    <div>
+                        <div class="mb-4 pb-3 border-b border-slate-800/80 flex items-start justify-between">
+                            <div>
+                                <span class="text-[11px] font-bold uppercase tracking-wider ${isFloat ? 'text-amber-400' : 'text-cyan-400'}">
+                                    <i class="fa-solid ${isFloat ? 'fa-cookie-bite' : 'fa-feather'} mr-1"></i>${info.category} ${info.cost ? `&bull; Cost: ${info.cost}g` : ''}
+                                </span>
+                                <h3 class="font-bold text-lg ${qStyle.split(' ')[0]} group-hover:underline mt-0.5 flex items-center gap-2">
+                                    ${info.fullName}
+                                </h3>
+                            </div>
+                            <span class="text-xs px-2.5 py-1 rounded-full border ${qStyle} font-semibold uppercase tracking-wider flex items-center gap-1">
+                                <i class="fa-solid fa-up-right-and-down-left-from-center text-[10px]"></i> ${info.quality}
+                            </span>
+                        </div>
+
+                        <div class="mb-4">
+                            <h4 class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-2 flex items-center justify-between">
+                                <span>Attracted Fish (${targetFish.length})</span>
+                            </h4>
+                            <div class="flex flex-wrap gap-1.5 max-h-28 overflow-hidden">
+                                ${targetFish.map(f => `
+                                    <span onclick="navigateToFish(${f.id}, event)" class="text-xs bg-slate-950 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-emerald-500/40 px-2.5 py-1 rounded-lg transition flex items-center space-x-1.5 cursor-pointer">
+                                        <span class="text-[10px] text-emerald-400">#${f.id}</span>
+                                        <span>${f.name}</span>
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function openModal(type, idKey) {
+            const modal = document.getElementById('detail-modal');
+            const container = document.getElementById('modal-container');
+            const headerBadge = document.getElementById('modal-icon-badge');
+            const catTag = document.getElementById('modal-category-tag');
+            const extraBadge = document.getElementById('modal-extra-badge');
+            const title = document.getElementById('modal-title');
+            const body = document.getElementById('modal-body');
+
+            if (type === 'fish') {
+                const fish = GAME_DATA.fish.find(f => f.id === Number(idKey));
+                if (!fish) return;
+
+                headerBadge.className = "w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-inner bg-emerald-500/10 border border-emerald-500/30 text-emerald-400";
+                headerBadge.innerHTML = `<i class="fa-solid fa-fish"></i>`;
+                catTag.className = "text-xs uppercase font-extrabold tracking-wider px-2.5 py-0.5 rounded-full border bg-emerald-500/10 border-emerald-500/30 text-emerald-400";
+                catTag.textContent = "Fish Species Spec";
+                extraBadge.textContent = `#${fish.id.toString().padStart(2, '0')}`;
+                title.textContent = fish.name;
+
+                const regionMap = {};
+                fish.locations.forEach(loc => {
+                    const reg = getRegionForLocation(loc);
+                    if (!regionMap[reg]) regionMap[reg] = [];
+                    regionMap[reg].push(loc);
+                });
+
+                body.innerHTML = `
+                    <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-worm text-amber-400"></i>
+                            Recommended Baits & Costs
+                        </h3>
+                        ${fish.baits.length === 0 ? `
+                            <p class="text-sm text-slate-500 italic">No specific bait required for this fish.</p>
+                        ` : `
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                ${fish.baits.map(b => {
+                                    const info = getBaitInfo(b);
+                                    const qStyle = getQualityStyle(info.quality);
+                                    return `
+                                        <div onclick="navigateToBait('${b}')" class="bg-slate-900 border border-slate-800 hover:border-amber-500/40 p-3 rounded-xl flex items-center justify-between cursor-pointer transition">
+                                            <div class="flex items-center space-x-3">
+                                                <div class="w-8 h-8 rounded-lg flex items-center justify-center border ${qStyle}">
+                                                    <i class="fa-solid ${info.category === 'Float Bait' ? 'fa-cookie-bite' : 'fa-feather'} text-xs"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="font-bold text-sm text-slate-200">${info.fullName}</div>
+                                                    <div class="text-[11px] text-slate-400">${info.category}</div>
+                                                </div>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="text-xs px-2 py-0.5 rounded border uppercase font-bold text-[10px] ${qStyle}">${info.quality}</span>
+                                                <div class="text-[11px] text-slate-400 mt-1">${info.cost ? `${info.cost}g` : 'Free'}</div>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        `}
+                    </div>
+
+                    <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-map-location-dot text-cyan-400"></i>
+                            Catchable Locations (${fish.locations.length})
+                        </h3>
+                        <div class="space-y-3">
+                            ${Object.entries(regionMap).map(([region, locs]) => `
+                                <div>
+                                    <div class="text-xs font-extrabold text-cyan-400 uppercase tracking-wide mb-1.5">${region}</div>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${locs.map(l => `
+                                            <button onclick="navigateToLocation('${l}')" class="px-3 py-1.5 bg-slate-900 border border-slate-800 hover:border-cyan-500/50 text-slate-200 text-xs rounded-xl font-medium transition flex items-center gap-1.5">
+                                                <i class="fa-solid fa-location-dot text-emerald-400 text-[10px]"></i>
+                                                <span>${l}</span>
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } 
+            else if (type === 'location') {
+                const locName = idKey;
+                const region = getRegionForLocation(locName);
+                const catchableFish = GAME_DATA.fish.filter(f => f.locations.includes(locName));
+
+                headerBadge.className = "w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-inner bg-cyan-500/10 border border-cyan-500/30 text-cyan-400";
+                headerBadge.innerHTML = `<i class="fa-solid fa-map-location-dot"></i>`;
+                catTag.className = "text-xs uppercase font-extrabold tracking-wider px-2.5 py-0.5 rounded-full border bg-cyan-500/10 border-cyan-500/30 text-cyan-400";
+                catTag.textContent = "Location Spec";
+                extraBadge.textContent = region;
+                title.textContent = locName;
+
+                body.innerHTML = `
+                    <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                                <i class="fa-solid fa-fish text-emerald-400"></i>
+                                All Catchable Species (${catchableFish.length})
+                            </h3>
+                            <span class="text-xs text-slate-500">Click species to inspect</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            ${catchableFish.map(f => `
+                                <div onclick="navigateToFish(${f.id})" class="bg-slate-900 border border-slate-800 hover:border-emerald-500/50 p-3 rounded-xl cursor-pointer transition flex flex-col justify-between">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="font-bold text-sm text-slate-200 flex items-center gap-2">
+                                            <span class="text-xs text-emerald-400 font-extrabold">#${f.id}</span>
+                                            ${f.name}
+                                        </span>
+                                        <i class="fa-solid fa-chevron-right text-xs text-slate-600"></i>
+                                    </div>
+                                    <div class="flex flex-wrap gap-1">
+                                        ${f.baits.length === 0 ? '<span class="text-[10px] text-slate-500 italic">No bait needed</span>' : 
+                                            f.baits.map(b => {
+                                                const info = getBaitInfo(b);
+                                                const qStyle = getQualityStyle(info.quality);
+                                                return `
+                                                    <span class="text-[10px] ${qStyle} border px-2 py-0.5 rounded font-medium">
+                                                        ${info.fullName}
+                                                    </span>
+                                                `;
+                                            }).join('')
+                                        }
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            else if (type === 'bait') {
+                const baitKey = idKey;
+                const info = getBaitInfo(baitKey);
+                const targetFish = GAME_DATA.fish.filter(f => f.baits.includes(baitKey));
+                const qStyle = getQualityStyle(info.quality);
+
+                const locSet = new Set();
+                targetFish.forEach(f => f.locations.forEach(l => locSet.add(l)));
+                const uniqueLocations = Array.from(locSet);
+
+                headerBadge.className = `w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-inner border ${qStyle}`;
+                headerBadge.innerHTML = `<i class="fa-solid ${info.category === 'Float Bait' ? 'fa-cookie-bite' : 'fa-feather'}"></i>`;
+                catTag.className = `text-xs uppercase font-extrabold tracking-wider px-2.5 py-0.5 rounded-full border ${qStyle}`;
+                catTag.textContent = `${info.quality} Quality ${info.category}`;
+                extraBadge.textContent = info.cost ? `${info.cost} Gold` : 'Standard';
+                title.textContent = info.fullName;
+
+                body.innerHTML = `
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div class="bg-slate-950/70 border border-slate-800 p-3 rounded-xl text-center">
+                            <span class="text-[10px] font-bold uppercase text-slate-500 block">Category</span>
+                            <span class="text-sm font-extrabold text-slate-200 mt-0.5 block">${info.category}</span>
+                        </div>
+                        <div class="bg-slate-950/70 border border-slate-800 p-3 rounded-xl text-center">
+                            <span class="text-[10px] font-bold uppercase text-slate-500 block">Quality</span>
+                            <span class="text-sm font-extrabold uppercase ${qStyle.split(' ')[0]} mt-0.5 block">${info.quality}</span>
+                        </div>
+                        <div class="bg-slate-950/70 border border-slate-800 p-3 rounded-xl text-center">
+                            <span class="text-[10px] font-bold uppercase text-slate-500 block">Cost</span>
+                            <span class="text-sm font-extrabold text-amber-400 mt-0.5 block">${info.cost ? `${info.cost}g` : 'Free'}</span>
+                        </div>
+                        <div class="bg-slate-950/70 border border-slate-800 p-3 rounded-xl text-center">
+                            <span class="text-[10px] font-bold uppercase text-slate-500 block">Attracted Fish</span>
+                            <span class="text-sm font-extrabold text-emerald-400 mt-0.5 block">${targetFish.length} Species</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-fish text-emerald-400"></i>
+                            Attracted Species (${targetFish.length})
+                        </h3>
+                        ${targetFish.length === 0 ? `
+                            <p class="text-sm text-slate-500 italic">No specific fish require this bait.</p>
+                        ` : `
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                ${targetFish.map(f => `
+                                    <div onclick="navigateToFish(${f.id})" class="bg-slate-900 border border-slate-800 hover:border-emerald-500/50 p-3 rounded-xl cursor-pointer transition flex items-center justify-between">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-xs text-emerald-400 font-extrabold">#${f.id}</span>
+                                            <span class="font-bold text-sm text-slate-200">${f.name}</span>
+                                        </div>
+                                        <span class="text-[11px] text-slate-500">${f.locations.length} Locations</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `}
+                    </div>
+
+                    <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-compass text-cyan-400"></i>
+                            Effective Locations (${uniqueLocations.length})
+                        </h3>
+                        <div class="flex flex-wrap gap-2">
+                            ${uniqueLocations.map(loc => `
+                                <button onclick="navigateToLocation('${loc}')" class="px-3 py-1.5 bg-slate-900 border border-slate-800 hover:border-cyan-500/50 text-slate-200 text-xs rounded-xl font-medium transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-location-dot text-cyan-400 text-[10px]"></i>
+                                    <span>${loc}</span>
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            modal.classList.remove('pointer-events-none', 'opacity-0');
+            modal.classList.add('opacity-100');
+            container.classList.remove('scale-95');
+            container.classList.add('scale-100');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('detail-modal');
+            const container = document.getElementById('modal-container');
+            modal.classList.remove('opacity-100');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            container.classList.remove('scale-100');
+            container.classList.add('scale-95');
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+        document.getElementById('detail-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'detail-modal') closeModal();
+        });
+
+        function updateBanner() {
+            const icon = document.getElementById('banner-icon');
+            const tag = document.getElementById('banner-tag');
+            const title = document.getElementById('banner-title');
+            const subtitle = document.getElementById('banner-subtitle');
+            const stats = document.getElementById('banner-stats');
+
+            stats.innerHTML = '';
+
+            if (currentMode === 'fish') {
+                icon.innerHTML = `<i class="fa-solid fa-fish"></i>`;
+                tag.textContent = "Mode: Search by Fish Species";
+                if (selectedValue === 'ALL') {
+                    title.textContent = "All Species Index (27)";
+                    subtitle.textContent = "Click any fish card to expand complete species details and location breakdown.";
+                    stats.innerHTML = `
+                        <span class="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold">27 Total Fish</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300">13 Baits</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300">8 Locations</span>
+                    `;
+                } else {
+                    const fish = GAME_DATA.fish.find(f => String(f.id) === String(selectedValue));
+                    title.textContent = `#${fish.id} - ${fish.name}`;
+                    subtitle.textContent = `Click card to expand full specifications for ${fish.name}.`;
+                    stats.innerHTML = `
+                        <span class="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 font-semibold">${fish.baits.length} Bait Option${fish.baits.length === 1 ? '' : 's'}</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-semibold">${fish.locations.length} Location${fish.locations.length === 1 ? '' : 's'}</span>
+                    `;
+                }
+            } else if (currentMode === 'location') {
+                icon.innerHTML = `<i class="fa-solid fa-map-location-dot"></i>`;
+                tag.textContent = "Mode: Search by Location";
+                if (selectedValue === 'ALL') {
+                    title.textContent = "All Fishing Regions & Docks (8)";
+                    subtitle.textContent = "Click any location to view the full list of catchable fish and required baits.";
+                    stats.innerHTML = `
+                        <span class="px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-semibold">8 Locations</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300">3 Major Zones</span>
+                    `;
+                } else {
+                    const region = getRegionForLocation(selectedValue);
+                    const count = GAME_DATA.fish.filter(f => f.locations.includes(selectedValue)).length;
+                    title.textContent = `${selectedValue}`;
+                    subtitle.textContent = `Zone: ${region} &bull; Click to see detailed catchable species.`;
+                    stats.innerHTML = `
+                        <span class="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-semibold">${count} Catchable Species</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300">Region: ${region}</span>
+                    `;
+                }
+            } else if (currentMode === 'bait') {
+                icon.innerHTML = `<i class="fa-solid fa-worm"></i>`;
+                tag.textContent = "Mode: Search by Bait Type";
+                if (selectedValue === 'ALL') {
+                    title.textContent = "All Float & Lure Baits (13)";
+                    subtitle.textContent = "Click any bait card to expand quality specifications and full target fish list.";
+                    stats.innerHTML = `
+                        <span class="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 font-semibold">4 Float Baits</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-semibold">9 Lure Baits</span>
+                    `;
+                } else {
+                    const info = getBaitInfo(selectedValue);
+                    const targets = GAME_DATA.fish.filter(f => f.baits.includes(selectedValue));
+                    title.textContent = info.fullName;
+                    subtitle.textContent = `Category: ${info.category} ${info.cost ? `&bull; Cost: ${info.cost}g` : ''} &bull; Click card for details.`;
+                    stats.innerHTML = `
+                        <span class="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 font-semibold">${info.category}</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-semibold">${targets.length} Attracted Species</span>
+                    `;
+                }
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            switchMode('fish', 'ALL');
+        });
+    </script>
+</body>
+</html>
